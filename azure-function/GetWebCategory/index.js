@@ -44,7 +44,7 @@ export default async function (context, req) {
     // 1) Validate input
     const inputUrl = (req.body && req.body.url ? String(req.body.url) : "").trim();
     if (!inputUrl) {
-      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url'." } };
+      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url'." } };
       return;
     }
 
@@ -68,7 +68,7 @@ export default async function (context, req) {
       context.res = {
         status: 500,
         headers: corsHeaders(),
-        body: { error: "Token acquisition failed", detail:        body: { error: "Token acquisition failed", detail: String(e) }
+        body: { error: "Token acquisition failed", detail: String(e) }
       };
       return;
     }
@@ -91,7 +91,7 @@ export default async function (context, req) {
     });
 
     const raw = await graphRes.text();
-    context.log(`Graph status: ${graphRes.status}; body length: ${raw?.length || 0}`);
+    context.log(`Graph status: ${graphRes.status}; body length: ${raw ? raw.length : 0}`);
 
     // 6) Parse if JSON; otherwise, return raw payload for visibility
     let body;
