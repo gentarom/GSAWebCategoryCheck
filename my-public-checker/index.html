@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Global Secure Access – Web Category Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Microsoft Entra Global Secure Access</h1>
+    <h2>Web Category Checker</h2>
+  </header>
+
+  <main>
+    <section>
+      <label for="urlInput">Enter a URL:</label>
+      <input id="urlInput" type="url" placeholder="https://example.com" />
+      <button id="checkBtn">Check category</button>
+    </section>
+
+    <section>
+      <h3>Result</h3>
+      <pre id="resultPane">Enter a URL and click "Check category".</pre>
+    </section>
+  </main>
+
+  <footer>
+    <small>Powered by Microsoft Graph (beta) – Network Access</small>
+  </footer>
+
+  <script>
+    const apiUrl = "https://<your-function-app>.azurewebsites.net/api/GetWebCategory";
+
+    const checkBtn   = document.getElementById("checkBtn");
+    const urlInput   = document.getElementById("urlInput");
+    const resultPane = document.getElementById("resultPane");
+
+    checkBtn.addEventListener("click", async () => {
+      const url = (urlInput.value || "").trim();
+      if (!url) { resultPane.textContent = "Please enter a URL."; return; }
+
+      resultPane.textContent = "Checking category...";
+      try {
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          resultPane.textContent = `Error ${res.status}:\n` + JSON.stringify(data, null, 2);
+          return;
+        }
+        resultPane.textContent = JSON.stringify(data, null, 2);
+
+        // OPTIONAL: render a friendlier summary when categories are present
+        //        // if (data?.categories?.length) {
+        //   const top = data.categories[0];
+        //   resultPane.textContent =
+        //     `Category: ${top.name} (confidence: ${Math.round((top.confidence || 0) * 100)}%)`;
+        // }
+      } catch (e) {
+        resultPane.textContent = `Network error: ${e}`;
+      }
+    });
+  </script>
+</body>
