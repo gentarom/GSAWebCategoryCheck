@@ -1,4 +1,3 @@
-
 import fetch from "node-fetch";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 
