@@ -60,14 +60,14 @@ export default async function (context, req) {
       return;
     }
 
-    // Build function-style GET with correct alias syntax (value quoted after ?@x=)
+
+    // Build function‑style GET using literal string (no alias, no percent‑encoding)
     const endpoint =
-      "https://graph.microsoft.com/beta/networkaccess/connectivity/" +
-      "microsoft.graph.networkaccess.getWebCategoryByUrl(url=@x)?@x='" +
-      encodeURIComponent(url) + "'";
-
+      "https://graph.microsoft.com/beta/networkAccess/connectivity/" +
+      `microsoft.graph.networkaccess.getWebCategoryByUrl(url='${url}')`;
+    
     context.log(`Calling Graph: ${endpoint}`);
-
+    
     const graphRes = await fetch(endpoint, {
       method: "GET",
       headers: {
@@ -75,6 +75,7 @@ export default async function (context, req) {
         "Accept": "application/json"
       }
     });
+
 
     const raw = await graphRes.text();
     context.log(`Graph status: ${graphRes.status}; body length: ${raw?.length || 0}`);
