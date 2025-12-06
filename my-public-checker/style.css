@@ -1,9 +1,0 @@
-:root { --primary:#0067b8; --bg:#f6f6f6; --text:#1f2937; }
-body { margin:0; font-family: Segoe UI, system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--text); }
-header { padding:24px; background:#fff; border-bottom:1px solid #e5e7eb; }
-main { max-width:800px; margin:24px auto;main { max-width:800px; margin:24px auto; padding:0 16px; }
-section { background:#fff; padding:16px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:16px; }
-label { display:block; margin-bottom:8px; }
-input[type="url"] { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; margin-bottom:12px; }
-button { background:var(--primary); color:#fff; border:none; padding:10px 16px; border-radius:6px; cursor:pointer; }
-button:hover { filter:brightness(1.05); }
