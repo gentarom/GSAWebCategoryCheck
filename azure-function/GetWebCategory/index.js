@@ -74,3 +74,4 @@ export default async function (context, req) {
     context.log.error(err);
     context.res = { status: 500, headers: corsHeaders(), body: { error: "Server error", detail: `${err}` } };
   }
+}
