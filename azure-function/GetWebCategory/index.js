@@ -44,11 +44,11 @@ export default async function (context, req) {
     // 1) Validate input
     const inputUrl = (req.body && req.body.url ? String(req.body.url) : "").trim();
     if (!inputUrl) {
-      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url'." } };
+      context.res = { status: 400, headers: corsHeaders(), body: { error: "Missing 'url'." } };
       return;
     }
 
-    // 2) Normalize for the function parameter:
+       // 2) Normalize for the function parameter:
     //    - Remove scheme (http/https)
     //    - Remove leading slashes
     //    - Escape single quotes for OData string literal safety
