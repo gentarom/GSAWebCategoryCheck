@@ -1,12 +1,18 @@
+
 import fetch from "node-fetch";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 
-// Read secrets from environment (configure in Azure → Function App → Configuration)
-const tenantId      = process.env.TENANT_ID;      // e.g., aaaa-bbbb-cccc-dddd
+// === Env vars (fail fast if missing) ===
+const requiredEnv = ["TENANT_ID", "CLIENT_ID", "CLIENT_SECRET", "ALLOWED_ORIGIN"];
+for (const k of requiredEnv) {
+  if (!process.env[k]) throw new Error(`Missing environment variable: ${k}`);
+}
+const tenantId      = process.env.TENANT_ID;
 const clientId      = process.env.CLIENT_ID;
-const clientSecret  = process.env.CLIENT_SECRET;  // or use certificates
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "*"; // e.g., https://gentarom.github.io
+const clientSecret  = process.env.CLIENT_SECRET;
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
 
+// === MSAL confidential client ===
 const cca = new ConfidentialClientApplication({
   auth: {
     clientId,
@@ -24,6 +30,7 @@ function corsHeaders() {
 }
 
 export default async function (context, req) {
+  // CORS preflight
   if (req.method === "OPTIONS") {
     context.res = { status: 204, headers: corsHeaders() };
     return;
@@ -36,42 +43,53 @@ export default async function (context, req) {
       return;
     }
 
-    // Acquire Graph app-only token
-    const tokenResponse = await cca.acquireTokenByClientCredential({
-      scopes: [ "https://graph.microsoft.com/.default" ]
-    });
-    const accessToken = tokenResponse.accessToken;
-
-    // 1) Try function-style GET (your requested endpoint)
-    const encoded = encodeURIComponent(url);
-    const getEndpoint =
-      `https://graph.microsoft.com/beta/networkaccess/connectivity/` +
-      `microsoft.graph.networkaccess.getWebCategoryByUrl(url='${encoded}')`;
-
-    let graphRes = await fetch(getEndpoint, {
-      method: "GET",
-      headers: { "Authorization": `Bearer ${accessToken}`, "Accept": "application/json" }
-    });
-
-    // 2) If GET fails (404/400/403, etc.), fall back to documented POST action
-    if (!graphRes.ok) {
-      const postEndpoint = "https://graph.microsoft.com/beta/networkAccess/categorizeWebUrl";
-      graphRes = await fetch(postEndpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-               body: JSON.stringify({ url })
+    // Acquire app-only token
+    let accessToken;
+    try {
+      const tokenResponse = await cca.acquireTokenByClientCredential({
+        scopes: ["https://graph.microsoft.com/.default"]
       });
+      accessToken = tokenResponse.accessToken;
+    } catch (e) {
+      context.log.error("Token acquisition failed:", e);
+      context.res = {
+        status: 500,
+        headers: corsHeaders(),
+        body: { error: "Token acquisition failed", detail: String(e) }
+      };
+      return;
     }
 
-    const text = await graphRes.text();
-    const body = text ? JSON.parse(text) : {};
+    // Build function-style GET with correct alias syntax (value quoted after ?@x=)
+    const endpoint =
+      "https://graph.microsoft.com/beta/networkaccess/connectivity/" +
+      "microsoft.graph.networkaccess.getWebCategoryByUrl(url=@x)?@x='" +
+      encodeURIComponent(url) + "'";
+
+    context.log(`Calling Graph: ${endpoint}`);
+
+    const graphRes = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Accept": "application/json"
+      }
+    });
+
+    const raw = await graphRes.text();
+    context.log(`Graph status: ${graphRes.status}; body length: ${raw?.length || 0}`);
+
+    // Parse if JSON; otherwise return raw payload for visibility
+    let body;
+    try {
+      body = raw ? JSON.parse(raw) : {};
+    } catch {
+      body = { raw, note: "Response was not valid JSON." };
+    }
+
     context.res = { status: graphRes.status, headers: corsHeaders(), body };
   } catch (err) {
-    context.log.error(err);
-    context.res = { status: 500, headers: corsHeaders(), body: { error: "Server error", detail: `${err}` } };
+    context.log.error("Unhandled server error:", err);
+       context.res = { status: 500, headers: corsHeaders(), body: { error: "Unhandled server error", detail: String(err) } };
   }
 }
