@@ -89,6 +89,7 @@
   }
 
   // Call Microsoft Graph (beta) – Network Access categorizeWebUrl action
+  /*
   async function callCategorizeWebUrl(url) {
     const endpoint = "https://graph.microsoft.com/beta/networkAccess/categorizeWebUrl";
 
@@ -113,7 +114,25 @@
     }
 
     return response.json();
+  }*/
+  
+async function callCategorizeWebUrl(url) {
+  const endpoint = `https://graph.microsoft.com/beta/networkaccess/connectivity/microsoft.graph.networkaccess.getWebCategoryByUrl(url='${encodeURIComponent(url)}')`;
+  const token = await getToken();
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json"
+    }
+  });
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Graph error ${response.status}: ${errBody}`);
   }
+  return response.json();
+}
+
 
   // On click: validate URL and call Graph
   checkBtn.addEventListener("click", async () => {
